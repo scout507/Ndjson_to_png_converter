@@ -17,9 +17,9 @@ Simply clone the repository and run `npm install`.
 2. Paste all your ndjson-files into `data`
 3. Create a subdirectory in `data` for each category you want to convert. The subdirectories should be named according to the category name, for example `apple`.
 4. Add your categories to  `dataList` in the `parser.ts` file.
-5. Run `parser.ts` . In the console you'll get ask witch category and how many files 
+5. Run `parser.ts` . In the console you'll get ask witch category and how many files you want to convert.
 
-![image-20220203121106444](C:\Users\Dominik\AppData\Roaming\Typora\typora-user-images\image-20220203121106444.png)
+The png images will be saved to their according subdirectories.
 
 
 
