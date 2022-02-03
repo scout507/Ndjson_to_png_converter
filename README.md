@@ -19,7 +19,6 @@ Simply clone the repository and run `npm install`.
 4. Add your categories to  `dataList` in the `parser.ts` file.
 5. Run `parser.ts` . In the console you'll get ask witch category and how many files 
 
-![image-20220203121106444](C:\Users\Dominik\AppData\Roaming\Typora\typora-user-images\image-20220203121106444.png)
 
 
 
