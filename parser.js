@@ -40,8 +40,9 @@ var fs = require('fs');
 var ndjson = require('ndjson');
 var sharp = require('sharp');
 var readline = require("readline");
-/***
- * Settings
+/**
+ * Contains the categories you want to convert.
+ * Categories must be in alphabetical order.
  */
 var dataList = [
     "apple",
@@ -66,40 +67,10 @@ var dataList = [
     "t-shirt",
     //"tree"
 ];
-main();
-function main() {
-    var _this = this;
-    var maxFiles;
-    var rl = readline.createInterface({
-        input: process.stdin,
-        output: process.stdout
-    });
-    rl.question("Type the maximum images per category you want to convert. \n", function (answer) {
-        maxFiles = +answer;
-        rl.question("Type the name of the data you want to convert. Type 'all' to convert all data \n", function (answer) { return __awaiter(_this, void 0, void 0, function () {
-            return __generator(this, function (_a) {
-                switch (_a.label) {
-                    case 0:
-                        if (!(answer.toLocaleLowerCase() == "all")) return [3 /*break*/, 2];
-                        console.log("Converting all data with " + maxFiles + " per dataset.");
-                        return [4 /*yield*/, convertAll(maxFiles)];
-                    case 1:
-                        _a.sent();
-                        rl.close();
-                        return [3 /*break*/, 4];
-                    case 2:
-                        console.log("Converting " + maxFiles + " " + answer + " images.");
-                        return [4 /*yield*/, convertSpecific(maxFiles, answer)];
-                    case 3:
-                        _a.sent();
-                        rl.close();
-                        _a.label = 4;
-                    case 4: return [2 /*return*/];
-                }
-            });
-        }); });
-    });
-}
+/**
+ *  Converts all ndjson from the data directory to png files.
+ * @param maxFiles specifies how many drawings are to be created from a category.
+ */
 function convertAll(maxFiles) {
     return __awaiter(this, void 0, void 0, function () {
         var _loop_1, j;
@@ -111,7 +82,7 @@ function convertAll(maxFiles) {
                             switch (_b.label) {
                                 case 0: return [4 /*yield*/, parseSimplifiedDrawings("data/full_simplified_" + dataList[j] + ".ndjson", function (err, drawings) {
                                         return __awaiter(this, void 0, void 0, function () {
-                                            var res, i, d, percent;
+                                            var i, percent;
                                             return __generator(this, function (_a) {
                                                 switch (_a.label) {
                                                     case 0:
@@ -121,18 +92,9 @@ function convertAll(maxFiles) {
                                                         _a.label = 1;
                                                     case 1:
                                                         if (!(i < maxFiles)) return [3 /*break*/, 4];
-                                                        d = drawings[i];
-                                                        res = generate_svg(d.drawing);
                                                         percent = Math.round((j * maxFiles + i) / (dataList.length * maxFiles) * 1000) / 1000;
-                                                        console.clear();
-                                                        console.log(d.word + ": " + i + "/" + maxFiles + "    (" + (percent * 100).toFixed(1) + "%)");
-                                                        //Converts svg to png and saves it to the according directory
-                                                        return [4 /*yield*/, sharp(Buffer.from(res))
-                                                                .png()
-                                                                .flatten({ background: "#FFFFFF" })
-                                                                .toFile(__dirname + ("/data/40k/" + d.word + "/" + d.word + "_" + d.key_id + ".png"))];
+                                                        return [4 /*yield*/, convertOneDrawing(drawings[i], maxFiles, i, percent)];
                                                     case 2:
-                                                        //Converts svg to png and saves it to the according directory
                                                         _a.sent();
                                                         _a.label = 3;
                                                     case 3:
@@ -167,13 +129,18 @@ function convertAll(maxFiles) {
         });
     });
 }
-function convertSpecific(maxFiles, data) {
+/**
+ *  Converts one ndjson to many png files.
+ * @param maxFiles specifies how many drawings are to be created from a category.
+ * @param categoryName name of the category to be converted.
+ */
+function convertSpecific(maxFiles, categoryName) {
     return __awaiter(this, void 0, void 0, function () {
         return __generator(this, function (_a) {
             switch (_a.label) {
-                case 0: return [4 /*yield*/, parseSimplifiedDrawings("data/full_simplified_" + data + ".ndjson", function (err, drawings) {
+                case 0: return [4 /*yield*/, parseSimplifiedDrawings("data/full_simplified_" + categoryName + ".ndjson", function (err, drawings) {
                         return __awaiter(this, void 0, void 0, function () {
-                            var res, i, d, percent;
+                            var i, percent;
                             return __generator(this, function (_a) {
                                 switch (_a.label) {
                                     case 0:
@@ -183,18 +150,9 @@ function convertSpecific(maxFiles, data) {
                                         _a.label = 1;
                                     case 1:
                                         if (!(i < maxFiles)) return [3 /*break*/, 4];
-                                        d = drawings[i];
-                                        res = generate_svg(d.drawing);
                                         percent = Math.round((i) / (maxFiles) * 1000) / 1000;
-                                        console.clear();
-                                        console.log(d.word + ": " + i + "/" + maxFiles + "    (" + (percent * 100).toFixed(1) + "%)");
-                                        //Converts svg to png and saves it to the according directory
-                                        return [4 /*yield*/, sharp(Buffer.from(res))
-                                                .png()
-                                                .flatten({ background: "#FFFFFF" })
-                                                .toFile(__dirname + ("/data/images/" + d.word + "/" + d.word + "_" + d.key_id + ".png"))];
+                                        return [4 /*yield*/, convertOneDrawing(drawings[i], maxFiles, i, percent)];
                                     case 2:
-                                        //Converts svg to png and saves it to the according directory
                                         _a.sent();
                                         _a.label = 3;
                                     case 3:
@@ -213,39 +171,77 @@ function convertSpecific(maxFiles, data) {
         });
     });
 }
-function parseSimplifiedDrawings(fileName, callback) {
+/**
+ * Converts one drawing to one png file.
+ * These are saved on the system at the end under the path: [dirname]/data/images/[category]/[category]_[imageId].png`
+ * @param drawing contains the drawing to convert
+ * @param maxFiles specifies how many drawings are to be created from a category.
+ * @param iterator
+ * @param percent contains the progress percentage.
+ */
+function convertOneDrawing(drawing, maxFiles, iterator, percent) {
+    return __awaiter(this, void 0, void 0, function () {
+        var res;
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0:
+                    res = generate_svg(drawing.drawing);
+                    // Handles progress console output
+                    console.clear();
+                    console.log(drawing.word + ": " + iterator + "/" + maxFiles + "    (" + (percent * 100).toFixed(1) + "%)");
+                    // Converts svg to png and saves it to the according directory
+                    return [4 /*yield*/, sharp(Buffer.from(res))
+                            .png()
+                            .flatten({ background: "#FFFFFF" })
+                            .toFile(__dirname + ("/data/images/" + drawing.word + "/" + drawing.word + "_" + drawing.key_id + ".png"))];
+                case 1:
+                    // Converts svg to png and saves it to the according directory
+                    _a.sent();
+                    return [2 /*return*/];
+            }
+        });
+    });
+}
+/**
+ * Parse the ndjson files from quick draw dataset to single objects.
+ * After parsing, the objects are added to the "drawings" array.
+ * At the end, the callback is executed, waited for and the drawings are transferred with it.
+ * @param path path to the ndjson file.
+ * @param callback contains the function which runs after the parsing of the ndsjon to a object.
+ */
+function parseSimplifiedDrawings(path, callback) {
+    var _this = this;
     return new Promise(function (resolve) {
         var drawings = [];
-        var fileStream = fs.createReadStream(fileName);
+        var fileStream = fs.createReadStream(path);
         fileStream
             .pipe(ndjson.parse())
             .on('data', function (obj) {
             drawings.push(obj);
         })
             .on("error", callback)
-            .on("end", function () {
-            return __awaiter(this, void 0, void 0, function () {
-                return __generator(this, function (_a) {
-                    switch (_a.label) {
-                        case 0: return [4 /*yield*/, callback(null, drawings)];
-                        case 1:
-                            _a.sent();
-                            resolve(null);
-                            return [2 /*return*/];
-                    }
-                });
+            .on("end", function () { return __awaiter(_this, void 0, void 0, function () {
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0: return [4 /*yield*/, callback(null, drawings)];
+                    case 1:
+                        _a.sent();
+                        resolve(null);
+                        return [2 /*return*/];
+                }
             });
-        });
+        }); });
     });
 }
-/***
+/**
  * Converts the ndjson.drawing data into a svg-file.
- * @param data The drawing data of a single image.
- * @return returns a svg of the given image
+ * @param data the drawing data of a single image.
+ * @return returns a string containing the svg of the given image.
  */
 function generate_svg(data) {
     var svg = '';
     svg += '<svg width="255px" height="255px" version="1.1" xmlns="http://www.w3.org/2000/svg">\n';
+    // Iterates over the "x", "y" values and creates a line between these points.
     for (var j = 0; j < data.length; j++) {
         for (var i = 0; i < data[j][0].length - 1; i++) {
             var path = '';
@@ -258,3 +254,45 @@ function generate_svg(data) {
     svg += '</svg>\n';
     return svg;
 }
+/**
+ * Entry point of the program.
+ * Manages the user input.
+ */
+function main() {
+    var _this = this;
+    var maxFiles;
+    var rl = readline.createInterface({
+        input: process.stdin,
+        output: process.stdout
+    });
+    rl.question("Type the maximum images per category you want to convert. \n", function (answer) {
+        maxFiles = +answer;
+        rl.question("Type the name of the data you want to convert. Type 'all' to convert all data \n", function (answer) { return __awaiter(_this, void 0, void 0, function () {
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        if (!(answer.toLocaleLowerCase() == "all")) return [3 /*break*/, 2];
+                        console.log("Converting all data with " + maxFiles + " per dataset.");
+                        return [4 /*yield*/, convertAll(maxFiles)];
+                    case 1:
+                        _a.sent();
+                        rl.close();
+                        return [3 /*break*/, 4];
+                    case 2:
+                        console.log("Converting " + maxFiles + " " + answer + " images.");
+                        return [4 /*yield*/, convertSpecific(maxFiles, answer)];
+                    case 3:
+                        _a.sent();
+                        rl.close();
+                        _a.label = 4;
+                    case 4: return [2 /*return*/];
+                }
+            });
+        }); });
+    });
+}
+/**
+ * Starts the program.
+ */
+main();
+//# sourceMappingURL=parser.js.map
