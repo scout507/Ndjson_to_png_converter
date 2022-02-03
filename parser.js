@@ -40,6 +40,9 @@ var fs = require('fs');
 var ndjson = require('ndjson');
 var sharp = require('sharp');
 var readline = require("readline");
+/***
+ * Settings
+ */
 var dataList = [
     "apple",
     //"baseball",

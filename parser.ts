@@ -4,6 +4,10 @@ const sharp = require('sharp');
 
 import * as readline from 'readline';
 
+/***
+ * Settings
+ */
+
 const dataList = [
     "apple",
     //"baseball",
